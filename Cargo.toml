@@ -1,0 +1,34 @@
+[package]
+name = "lasertag"
+description = "Look for container image updates"
+repository = "https://github.com/featherbread/lasertag"
+authors = ["Alex Hamlin <alex@alexhamlin.co>"]
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+const_format = "0.2.35"
+pipecheck = "0.1.2"
+
+[dependencies.clap]
+version = "4.5.48"
+default-features = false
+features = ["cargo", "derive", "help", "std", "suggestions", "usage"]
+
+[dependencies.oci-client]
+version = "0.15.0"
+default-features = false
+features = ["native-tls"]
+
+[patch.crates-io.oci-client]
+git = "https://github.com/featherbread/rust-oci-client.git"
+branch = "list-tags-null"
+
+[dependencies.tokio]
+version = "1.47.1"
+default-features = false
+features = ["macros", "rt", "rt-multi-thread"]
+
+[dev-dependencies.rstest]
+version = "0.26.1"
+default-features = false
