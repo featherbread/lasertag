@@ -13,17 +13,14 @@ original tag, automatically selecting semantic versions from repositories that
 mix in things like Git SHA tags. This works reasonably well when you run lots
 of images with SemVer or date-based tags, and can collect them all from a
 configuration file. For example, using [xt](https://github.com/featherbread/xt)
-to process an Ansible playbook with `docker_container` tasks, and passing `-d`
-to omit images already on the latest version:
+and `jq` to process an Ansible playbook with `docker_container` tasks,
+and passing `-d` to omit images already on the latest version:
 
 ```sh
-declare -a images
-while read -r image; do images+=("$image"); done < <( \
-	xt my-ansible-playbook.yml \
-	| jq -r '.[].tasks[]["community.docker.docker_container"] // empty | .image' \
-	| grep -vE '^localhost/')
-
-lasertag -d "${images[@]}"
+xt my-ansible-playbook.yml \
+| jq -r '.[].tasks[]["community.docker.docker_container"] // empty | .image' \
+| grep -vE '^localhost/' \
+| xargs lasertag -d
 ```
 
 ## Limitations
