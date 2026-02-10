@@ -23,6 +23,15 @@ xt my-ansible-playbook.yml \
 | xargs lasertag -d
 ```
 
+## Installation
+
+After [installing Rust][install rust] on your system, you can install `lasertag`
+from this repository using Cargo:
+
+```sh
+cargo install --force --locked --git https://github.com/featherbread/lasertag.git
+```
+
 ## Limitations
 
 When passing in an "unstable" tag format, `lasertag`'s automatic matching
