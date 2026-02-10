@@ -16,7 +16,7 @@ default-features = false
 features = ["cargo", "derive", "help", "std", "suggestions", "usage"]
 
 [dependencies.oci-client]
-version = "0.15.0"
+version = "0.16.0"
 default-features = false
 features = ["native-tls"]
 
