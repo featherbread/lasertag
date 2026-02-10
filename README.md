@@ -32,6 +32,8 @@ from this repository using Cargo:
 cargo install --force --locked --git https://github.com/featherbread/lasertag.git
 ```
 
+[install rust]: https://www.rust-lang.org/tools/install
+
 ## Limitations
 
 When passing in an "unstable" tag format, `lasertag`'s automatic matching
