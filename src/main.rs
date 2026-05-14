@@ -48,7 +48,7 @@ async fn main() {
 			let image = Arc::clone(image);
 			tokio::spawn(async move {
 				let _permit = sema.acquire().await.unwrap();
-				get_latest_similar_tag(&image).await
+				get_latest_similar_image(&image).await
 			})
 		})
 		.collect();
@@ -58,10 +58,9 @@ async fn main() {
 	let mut has_error = false;
 	for (image, task) in iter::zip(cli.images, tasks) {
 		match task.await.unwrap() {
-			Ok(latest_tag) => {
-				if !cli.differences || image.tag() != Some(&latest_tag) {
-					let _ = writeln!(stdout, "{}\t{}", image, latest_tag);
-				}
+			Ok(latest) if cli.differences && image.tag() == Some(&latest.tag) => continue,
+			Ok(latest) => {
+				let _ = writeln!(stdout, "{}\t{}", image, latest);
 			}
 			Err(err) => {
 				let _ = writeln!(stderr, "{}\t{}", image, err);
@@ -72,6 +71,49 @@ async fn main() {
 	if has_error {
 		process::exit(1);
 	}
+}
+
+static CLIENT: LazyLock<Client> = LazyLock::new(|| {
+	Client::new(ClientConfig {
+		user_agent: build_user_agent(),
+		..Default::default()
+	})
+});
+
+struct Latest {
+	tag: String,
+	digest: Option<String>,
+}
+
+impl Display for Latest {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		match &self.digest {
+			Some(digest) => write!(f, "{}@{}", self.tag, digest),
+			None => f.write_str(&self.tag),
+		}
+	}
+}
+
+async fn get_latest_similar_image(base_image: &Reference) -> TagResult<Latest> {
+	let tag = get_latest_similar_tag(base_image).await?;
+
+	let digest = match base_image.digest() {
+		None => None,
+		Some(_) => {
+			let latest_image = Reference::with_tag(
+				base_image.registry().to_owned(),
+				base_image.repository().to_owned(),
+				tag.clone(),
+			);
+			let digest = CLIENT
+				.fetch_manifest_digest(&latest_image, &RegistryAuth::Anonymous)
+				.await?;
+
+			Some(digest)
+		}
+	};
+
+	Ok(Latest { tag, digest })
 }
 
 async fn get_latest_similar_tag(image: &Reference) -> TagResult<String> {
@@ -89,17 +131,9 @@ async fn get_latest_similar_tag(image: &Reference) -> TagResult<String> {
 }
 
 async fn list_all_tags(image: &Reference) -> TagResult<Vec<String>> {
-	static CLIENT: LazyLock<Client> = LazyLock::new(|| {
-		Client::new(ClientConfig {
-			user_agent: build_user_agent(),
-			..Default::default()
-		})
-	});
-
-	let client = &*CLIENT;
 	let mut all_tags: Vec<String> = vec![];
 	loop {
-		let result = client
+		let result = CLIENT
 			.list_tags(
 				image,
 				&RegistryAuth::Anonymous,
