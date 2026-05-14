@@ -58,14 +58,9 @@ async fn main() {
 	let mut has_error = false;
 	for (image, task) in iter::zip(cli.images, tasks) {
 		match task.await.unwrap() {
+			Ok(latest) if cli.differences && image.tag() == Some(&latest.tag) => continue,
 			Ok(latest) => {
-				if !cli.differences || image.tag() != Some(&latest.tag) {
-					if let Some(digest) = &latest.digest {
-						let _ = writeln!(stdout, "{}\t{}@{}", image, latest.tag, digest);
-					} else {
-						let _ = writeln!(stdout, "{}\t{}", image, latest.tag);
-					}
-				}
+				let _ = writeln!(stdout, "{}\t{}", image, latest);
 			}
 			Err(err) => {
 				let _ = writeln!(stderr, "{}\t{}", image, err);
@@ -88,6 +83,15 @@ static CLIENT: LazyLock<Client> = LazyLock::new(|| {
 struct Latest {
 	tag: String,
 	digest: Option<String>,
+}
+
+impl Display for Latest {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		match &self.digest {
+			Some(digest) => write!(f, "{}@{}", self.tag, digest),
+			None => f.write_str(&self.tag),
+		}
+	}
 }
 
 async fn get_latest_similar_image(base_image: &Reference) -> TagResult<Latest> {
