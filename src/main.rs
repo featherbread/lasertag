@@ -48,7 +48,7 @@ async fn main() {
 			let image = Arc::clone(image);
 			tokio::spawn(async move {
 				let _permit = sema.acquire().await.unwrap();
-				get_latest_similar_reference(&image).await
+				get_latest_similar_image(&image).await
 			})
 		})
 		.collect();
@@ -59,12 +59,11 @@ async fn main() {
 	for (image, task) in iter::zip(cli.images, tasks) {
 		match task.await.unwrap() {
 			Ok(latest) => {
-				if !cli.differences || image.tag() != latest.tag() {
-					if let Some(digest) = latest.digest() {
-						// TODO: Remove unwrap().
-						let _ = writeln!(stdout, "{}\t{}@{}", image, latest.tag().unwrap(), digest);
+				if !cli.differences || image.tag() != Some(&latest.tag) {
+					if let Some(digest) = &latest.digest {
+						let _ = writeln!(stdout, "{}\t{}@{}", image, latest.tag, digest);
 					} else {
-						let _ = writeln!(stdout, "{}\t{}", image, latest.tag().unwrap());
+						let _ = writeln!(stdout, "{}\t{}", image, latest.tag);
 					}
 				}
 			}
@@ -86,28 +85,31 @@ static CLIENT: LazyLock<Client> = LazyLock::new(|| {
 	})
 });
 
-async fn get_latest_similar_reference(base_image: &Reference) -> TagResult<Reference> {
-	let latest_tag = get_latest_similar_tag(base_image).await?;
-	let latest_image = Reference::with_tag(
-		base_image.registry().to_owned(),
-		base_image.repository().to_owned(),
-		latest_tag.clone(),
-	);
+struct Latest {
+	tag: String,
+	digest: Option<String>,
+}
 
-	if base_image.digest().is_none() {
-		return Ok(latest_image);
-	}
+async fn get_latest_similar_image(base_image: &Reference) -> TagResult<Latest> {
+	let tag = get_latest_similar_tag(base_image).await?;
 
-	let digest = CLIENT
-		.fetch_manifest_digest(&latest_image, &RegistryAuth::Anonymous)
-		.await?;
+	let digest = match base_image.digest() {
+		None => None,
+		Some(_) => {
+			let latest_image = Reference::with_tag(
+				base_image.registry().to_owned(),
+				base_image.repository().to_owned(),
+				tag.clone(),
+			);
+			let digest = CLIENT
+				.fetch_manifest_digest(&latest_image, &RegistryAuth::Anonymous)
+				.await?;
 
-	Ok(Reference::with_tag_and_digest(
-		base_image.registry().to_owned(),
-		base_image.repository().to_owned(),
-		latest_tag,
-		digest,
-	))
+			Some(digest)
+		}
+	};
+
+	Ok(Latest { tag, digest })
 }
 
 async fn get_latest_similar_tag(image: &Reference) -> TagResult<String> {
