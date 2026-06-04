@@ -7,11 +7,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-const_format = "0.2.35"
-pipecheck = "0.1.2"
+const_format = "0.2.36"
+pipecheck = "0.1.3"
 
 [dependencies.clap]
-version = "4.5.48"
+version = "4.6.1"
 default-features = false
 features = ["cargo", "derive", "help", "std", "suggestions", "usage"]
 
@@ -25,7 +25,7 @@ git = "https://github.com/featherbread/rust-oci-client.git"
 branch = "v0.16.1-list-tags-null"
 
 [dependencies.tokio]
-version = "1.47.1"
+version = "1.52.3"
 default-features = false
 features = ["macros", "rt", "rt-multi-thread"]
 
