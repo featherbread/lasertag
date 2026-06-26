@@ -8,7 +8,7 @@ edition = "2024"
 
 [dependencies]
 const_format = "0.2.36"
-pipecheck = "0.1.3"
+pipecheck = "0.2.0"
 
 [dependencies.clap]
 version = "4.6.1"
