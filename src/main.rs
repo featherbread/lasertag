@@ -3,13 +3,14 @@ use std::fmt::{self, Display};
 use std::io::{self, Write};
 use std::iter;
 use std::process;
+use std::str::FromStr;
 use std::sync::{Arc, LazyLock};
 
 use clap::Parser;
 use oci_client::client::ClientConfig;
 use oci_client::errors::OciDistributionError;
 use oci_client::secrets::RegistryAuth;
-use oci_client::{Client, Reference};
+use oci_client::{Client, ParseError, Reference};
 use tokio::sync::Semaphore;
 
 mod version;
@@ -20,9 +21,9 @@ use version::Version;
 #[command(about)]
 struct Cli {
 	/// The images to check
-	#[arg(value_parser = |raw: &str| raw.parse::<Reference>().map(Arc::new))]
+	#[arg(value_parser = |raw: &str| raw.parse::<Input>().map(Arc::new))]
 	#[arg(required = true)]
-	images: Vec<Arc<Reference>>,
+	images: Vec<Arc<Input>>,
 
 	/// Only print images whose newest tag differs
 	#[arg(short = 'd')]
@@ -48,7 +49,7 @@ async fn main() {
 			let image = Arc::clone(image);
 			tokio::spawn(async move {
 				let _permit = sema.acquire().await.unwrap();
-				get_latest_similar_image(&image).await
+				get_latest_similar_image(&image.parsed).await
 			})
 		})
 		.collect();
@@ -58,7 +59,7 @@ async fn main() {
 	let mut has_error = false;
 	for (image, task) in iter::zip(cli.images, tasks) {
 		match task.await.unwrap() {
-			Ok(latest) if cli.differences && image.tag() == Some(&latest.tag) => continue,
+			Ok(latest) if cli.differences && image.parsed.tag() == Some(&latest.tag) => continue,
 			Ok(latest) => {
 				let _ = writeln!(stdout, "{}\t{}", image, latest);
 			}
@@ -73,12 +74,26 @@ async fn main() {
 	}
 }
 
-static CLIENT: LazyLock<Client> = LazyLock::new(|| {
-	Client::new(ClientConfig {
-		user_agent: build_user_agent(),
-		..Default::default()
-	})
-});
+struct Input {
+	original: String,
+	parsed: Reference,
+}
+
+impl FromStr for Input {
+	type Err = ParseError;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		let parsed = Reference::from_str(s)?;
+		let original = s.to_owned();
+		Ok(Input { original, parsed })
+	}
+}
+
+impl Display for Input {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		f.write_str(&self.original)
+	}
+}
 
 struct Latest {
 	tag: String,
@@ -93,6 +108,13 @@ impl Display for Latest {
 		}
 	}
 }
+
+static CLIENT: LazyLock<Client> = LazyLock::new(|| {
+	Client::new(ClientConfig {
+		user_agent: build_user_agent(),
+		..Default::default()
+	})
+});
 
 async fn get_latest_similar_image(base_image: &Reference) -> TagResult<Latest> {
 	let tag = get_latest_similar_tag(base_image).await?;
