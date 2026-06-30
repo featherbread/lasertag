@@ -1129,7 +1129,7 @@ dependencies = [
 [[package]]
 name = "oci-client"
 version = "0.17.0"
-source = "git+https://github.com/featherbread/rust-oci-client.git?branch=v0.17.0-list-tags-null#30cad0bdae59dd2ad84a41b9df98a46f0e0d59f9"
+source = "git+https://github.com/oras-project/rust-oci-client.git?branch=main#7f8200640b5ca80543421c7ac7c4457a9d1de9e2"
 dependencies = [
  "bytes",
  "chrono",
@@ -1154,9 +1154,9 @@ dependencies = [
 
 [[package]]
 name = "oci-spec"
-version = "0.9.0"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8445a2631507cec628a15fdd6154b54a3ab3f20ed4fe9d73a3b8b7a4e1ba03a"
+checksum = "3df6f876ad774d6a676f7e968f5c3edacc32f90e65fe680a8b686235396556fb"
 dependencies = [
  "const_format",
  "derive_builder",
