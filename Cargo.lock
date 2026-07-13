@@ -1117,7 +1117,7 @@ dependencies = [
 [[package]]
 name = "oci-client"
 version = "0.17.0"
-source = "git+https://github.com/oras-project/rust-oci-client.git?branch=main#7f8200640b5ca80543421c7ac7c4457a9d1de9e2"
+source = "git+https://github.com/oras-project/rust-oci-client.git?branch=main#372d4250cce082839b88ee6e2bf5234f6e8ad774"
 dependencies = [
  "bytes",
  "chrono",
@@ -1126,7 +1126,6 @@ dependencies = [
  "http",
  "http-auth",
  "jsonwebtoken",
- "lazy_static",
  "oci-spec",
  "olpc-cjson",
  "regex",
