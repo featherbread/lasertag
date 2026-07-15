@@ -1,4 +1,3 @@
-use std::error::Error;
 use std::fmt::{self, Display};
 use std::io::{self, Write};
 use std::iter;
@@ -11,6 +10,7 @@ use oci_client::client::ClientConfig;
 use oci_client::errors::OciDistributionError;
 use oci_client::secrets::RegistryAuth;
 use oci_client::{Client, ParseError, Reference};
+use thiserror::Error;
 use tokio::sync::Semaphore;
 
 mod version;
@@ -182,27 +182,14 @@ const fn build_user_agent() -> &'static str {
 
 type TagResult<T> = Result<T, TagError>;
 
-#[derive(Debug)]
+#[derive(Error, Debug)]
 enum TagError {
+	#[error("image reference has no tag to match on")]
 	ImageMissingTag,
+
+	#[error("no similar tag format found in registry")]
 	NoSimilarTag,
-	Registry(OciDistributionError),
-}
 
-impl Error for TagError {}
-
-impl Display for TagError {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		match self {
-			TagError::ImageMissingTag => f.write_str("image reference has no tag to match on"),
-			TagError::NoSimilarTag => f.write_str("no similar tag format found in registry"),
-			TagError::Registry(err) => err.fmt(f),
-		}
-	}
-}
-
-impl From<OciDistributionError> for TagError {
-	fn from(err: OciDistributionError) -> Self {
-		Self::Registry(err)
-	}
+	#[error(transparent)]
+	Registry(#[from] OciDistributionError),
 }
