@@ -1,7 +1,7 @@
 use std::fmt::{self, Display};
 use std::io::{self, Write};
 use std::iter;
-use std::process;
+use std::process::ExitCode;
 use std::str::FromStr;
 use std::sync::{Arc, LazyLock};
 
@@ -37,18 +37,18 @@ struct Cli {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> ExitCode {
 	let cli = Cli::parse();
 
-	let sema = Arc::new(Semaphore::new(cli.concurrency));
-	let tasks: Vec<_> = cli
+	let semaphore = Arc::new(Semaphore::new(cli.concurrency));
+	let spawns: Vec<_> = cli
 		.images
 		.iter()
 		.map(|image| {
-			let sema = Arc::clone(&sema);
+			let semaphore = Arc::clone(&semaphore);
 			let image = Arc::clone(image);
 			tokio::spawn(async move {
-				let _permit = sema.acquire().await.unwrap();
+				let _permit = semaphore.acquire().await.unwrap();
 				get_latest_similar_image(&image.parsed).await
 			})
 		})
@@ -56,22 +56,22 @@ async fn main() {
 
 	let mut stdout = pipecheck::wrap(io::stdout().lock());
 	let mut stderr = pipecheck::wrap(io::stderr().lock());
-	let mut has_error = false;
-	for (image, task) in iter::zip(cli.images, tasks) {
-		match task.await.unwrap() {
+	let mut exit_code = ExitCode::SUCCESS;
+
+	for (image, spawn) in iter::zip(cli.images, spawns) {
+		match spawn.await.unwrap() {
 			Ok(latest) if cli.differences && image.parsed.tag() == Some(&latest.tag) => continue,
 			Ok(latest) => {
 				let _ = writeln!(stdout, "{}\t{}", image, latest);
 			}
 			Err(err) => {
 				let _ = writeln!(stderr, "{}\t{}", image, err);
-				has_error = true;
+				exit_code = ExitCode::FAILURE;
 			}
 		}
 	}
-	if has_error {
-		process::exit(1);
-	}
+
+	exit_code
 }
 
 struct Input {
