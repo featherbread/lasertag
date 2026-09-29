@@ -17,13 +17,9 @@ default-features = false
 features = ["cargo", "derive", "help", "std", "suggestions", "usage"]
 
 [dependencies.oci-client]
-version = "0.17.0"
+version = "0.18.0"
 default-features = false
 features = ["native-tls"]
-
-[patch.crates-io.oci-client]
-git = "https://github.com/oras-project/rust-oci-client.git"
-branch = "main"
 
 [dependencies.tokio]
 version = "1.52.3"
