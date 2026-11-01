@@ -7,9 +7,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-const_format = "0.2.36"
+const_format = "0.2.37"
 pipecheck = "0.2.0"
-thiserror = "2"
+thiserror = "2.0.18"
 
 [dependencies.clap]
 version = "4.6.1"
@@ -22,7 +22,7 @@ default-features = false
 features = ["native-tls"]
 
 [dependencies.tokio]
-version = "1.52.3"
+version = "1.54.1"
 default-features = false
 features = ["macros", "rt", "rt-multi-thread"]
 
