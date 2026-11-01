@@ -3,7 +3,8 @@ name = "lasertag"
 description = "Look for container image updates"
 repository = "https://github.com/featherbread/lasertag"
 authors = ["Alex Hamlin <alex@alexhamlin.co>"]
-version = "0.1.0"
+license = "MIT"
+version = "0.2.0"
 edition = "2024"
 readme = "README-CRATE.md"
 
