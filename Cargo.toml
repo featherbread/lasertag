@@ -5,6 +5,7 @@ repository = "https://github.com/featherbread/lasertag"
 authors = ["Alex Hamlin <alex@alexhamlin.co>"]
 version = "0.1.0"
 edition = "2024"
+readme = "README-CRATE.md"
 
 [dependencies]
 const_format = "0.2.37"
